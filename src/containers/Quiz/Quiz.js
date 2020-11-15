@@ -1,9 +1,12 @@
 import React, {Component} from 'react'
 import classes from './Quiz.module.css'
 import ActiveQuiz from '../../components/ActiveQuiz/ActiveQuiz'
+import FinishedQuiz from '../../components/FinishedQuiz/FinishedQuiz'
 
 class Quiz extends Component {
     state = {
+      results: {}, // {[id] : success error}
+      isFinished: false,
       activeQuestion: 0,
         quiz: [
             {
@@ -31,7 +34,7 @@ class Quiz extends Component {
             {
               question: 'Кто из мародеров был предателем?',
               rightAnswerId: 2,
-              id: 2,
+              id: 3,
                 answers: [
                     {text: 'Сириус Блэк', id: 1},
                     {text: 'Питер Петтигрю', id: 2},
@@ -42,7 +45,7 @@ class Quiz extends Component {
             {
               question: 'Какие серьги носила Полумна?',
               rightAnswerId: 4,
-              id: 2,
+              id: 4,
                 answers: [
                     {text: 'Морковки', id: 1},
                     {text: 'Помидорки', id: 2},
@@ -53,7 +56,7 @@ class Quiz extends Component {
             {
               question: 'На каком факультете нужно отгадать загадку, чтобы попасть в гостинную?',
               rightAnswerId: 2,
-              id: 2,
+              id: 5,
                 answers: [
                     {text: 'Гриффиндор', id: 1},
                     {text: 'Когтевран', id: 2},
@@ -64,7 +67,7 @@ class Quiz extends Component {
             {
               question: 'Какое варенье обожал Дамблдор?',
               rightAnswerId: 3,
-              id: 2,
+              id: 6,
                 answers: [
                     {text: 'Вишневое', id: 1},
                     {text: 'Смородиновое', id: 2},
@@ -75,7 +78,7 @@ class Quiz extends Component {
             {
               question: 'Как зовут домового эльфа Барти Крауча?',
               rightAnswerId: 4,
-              id: 2,
+              id: 7,
                 answers: [
                     {text: 'Дооби', id: 1},
                     {text: 'Кикимер', id: 2},
@@ -98,16 +101,23 @@ class Quiz extends Component {
       console.log('Answer Id: ', answerId)
 
       const question = this.state.quiz[this.state.activeQuestion]
+      const results = this.state.results
 
       if (question.rightAnswerId === answerId) {
+        if (!results[question.id]) {
+          results[question.id] = 'success'
+        }
 
         this.setState({
-          answerState: {[answerId]: 'success'}
+          answerState: {[answerId]: 'success'},
+          results
         })
 
         const timeout = window.setTimeout(() => {
           if (this.isQuizFinished()) {
-            console.log('Finished');
+            this.setState({
+              isFinished: true  
+            })
           } else {
             this.setState({
               activeQuestion: this.state.activeQuestion + 1,
@@ -117,11 +127,11 @@ class Quiz extends Component {
 
           window.clearTimeout(timeout)
         }, 1000)
-
-        
       } else {
+        results[question.id] = 'error'
         this.setState({
-          answerState: {[answerId]: 'error'}
+          answerState: {[answerId]: 'error'},
+          results
         })
       }
     }
@@ -130,20 +140,41 @@ class Quiz extends Component {
       return this.state.activeQuestion + 1 === this.state.quiz.length
     }
 
+    retryHandler = () => {
+      this.setState({
+        activeQuestion: 0,
+        answerState: null,
+        isFinished: false,
+        results: {}
+      })
+    }
+
+    componentDidMount() {
+      console.log('Quiz ID = ', this.props.match.params.id);
+    }
+
     render() {
         return (
             <div className={classes.Quiz}>
                 <div className={classes.QuizWrapper}>
                   <h1>Как хорошо ты знаешь Поттериану?</h1>
 
-                    <ActiveQuiz 
+                  {
+                    this.state.isFinished
+                    ? <FinishedQuiz 
+                    results={this.state.results}
+                    quiz={this.state.quiz}
+                    onRetry={this.retryHandler}
+                      />
+                    : <ActiveQuiz 
                         answers={this.state.quiz[this.state.activeQuestion].answers}
                         question={this.state.quiz[this.state.activeQuestion].question}
                         onAnswerClick={this.onAnswerClickHandler}
                         quizLength={this.state.quiz.length}
                         answerNumber={this.state.activeQuestion + 1}
                         state={this.state.answerState}
-                    />
+                      />  
+                  } 
                 </div>
             </div>
         )
